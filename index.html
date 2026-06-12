@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1020" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>P 💙 · GATE 2027</title>
+<style>
+  :root {
+    --bg: #0b1020; --panel: #121a30; --panel2: #1a2440; --edge: #263254;
+    --text: #e7ecf7; --dim: #8b97b5; --dimmer: #5b6783;
+    --arc: #22d3ee; --ok: #34d399; --warn: #fbbf24; --gold: #f5c842;
+    --rose: #fb7185; --violet: #a78bfa; --danger: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: linear-gradient(180deg, #0b1020 0%, #0d1226 60%, #0b0f1e 100%);
+    color: var(--text); min-height: 100vh;
+    font: 15px/1.45 -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 14px 12px calc(18px + env(safe-area-inset-bottom));
+    max-width: 520px; margin: 0 auto;
+  }
+  h1 { font-size: 19px; letter-spacing: .02em; }
+  .mission { color: var(--gold); font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; margin-top: 2px; }
+  .sub { color: var(--dim); font-size: 12px; }
+  .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .card { background: linear-gradient(180deg, rgba(34,211,238,.035), rgba(0,0,0,0) 38%), var(--panel);
+          border: 1px solid var(--edge); border-radius: 16px; padding: 13px 14px; margin-top: 12px; }
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .label { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: .12em; }
+
+  /* GATE clock — the draining runway */
+  .clock { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+  .clock .days { font-size: 34px; font-weight: 800; color: #fff; line-height: 1; }
+  .clock .dl { color: var(--arc); font-size: 12px; font-weight: 600; }
+  .clock .hms { font-size: 19px; color: rgba(103,232,249,.92); }
+  .clock .hms .s { color: rgba(251,191,36,.75); font-size: 15px; }
+
+  /* the climb — proj ▸ target */
+  .climb { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .climb .proj { color: var(--arc); font-weight: 700; font-size: 14px; }
+  .climb .tgt { color: var(--ok); font-weight: 700; font-size: 14px; }
+  .climb .bar { flex: 1; height: 6px; border-radius: 99px; background: var(--edge); overflow: hidden; min-width: 60px; }
+  .climb .bar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--arc), var(--ok)); }
+  .climb .gap { color: var(--gold); font-size: 11px; font-weight: 600; white-space: nowrap; }
+
+  .chip { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 4px 12px; font-size: 13px; font-weight: 600; border: 1px solid var(--edge); }
+  .chip.studying { color: var(--arc); border-color: rgba(34,211,238,.45); background: rgba(34,211,238,.10); box-shadow: 0 0 18px rgba(34,211,238,.28); }
+  .chip.break    { color: var(--ok);  border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.10); }
+  .chip.personal { color: var(--warn); border-color: rgba(251,191,36,.45); background: rgba(251,191,36,.10); }
+  .chip.online   { color: var(--ok);  border-color: rgba(52,211,153,.3);  background: rgba(52,211,153,.06); }
+  .chip.offline  { color: var(--dim); background: var(--panel2); }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .25 } }
+  .detail { font-size: 14px; margin-top: 8px; word-break: break-word; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .stat { background: var(--panel2); border-radius: 12px; padding: 8px 5px 7px; text-align: center; }
+  .stat b { display: block; font-size: 15px; font-weight: 700; }
+  .stat .label { display: block; margin-top: 1px; }
+  .stat .hint { display: block; font-size: 8.5px; color: var(--dimmer); margin-top: 1px; }
+  .ok2 { color: var(--ok); } .warn2 { color: var(--warn); } .gold2 { color: var(--gold); } .arc2 { color: var(--arc); }
+
+  .tl { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; max-height: 300px; overflow-y: auto; }
+  .blk { display: flex; gap: 8px; font-size: 12.5px; background: var(--panel2); border-radius: 9px; padding: 6px 8px; }
+  .blk.past { opacity: .38; }
+  .blk.now { outline: 1px solid rgba(34,211,238,.6); box-shadow: 0 0 14px rgba(34,211,238,.18); }
+  .blk .t { color: var(--dimmer); white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 118px; font-size: 11.5px; padding-top: 1px; }
+  .blk .l { flex: 1; min-width: 0; word-break: break-word; }
+  .blk.study .l { color: #cdd7ee; } .blk.study .t { color: var(--arc); opacity: .8; }
+  .blk.break .l, .blk.long .l { color: var(--ok); } .blk.commitment .l { color: var(--warn); } .blk.buffer .l { color: var(--violet); }
+  .nowtag { color: var(--arc); font-size: 9px; font-weight: 800; animation: pulse 1.6s infinite; }
+  .done-line { font-size: 12px; color: var(--ok); opacity: .85; padding: 2px 0; }
+
+  .chat { display: flex; flex-direction: column; gap: 6px; max-height: 46vh; overflow-y: auto; padding: 4px 2px; }
+  .msg { position: relative; max-width: 80%; border-radius: 16px; padding: 7px 11px; font-size: 14px; word-break: break-word; white-space: pre-wrap; cursor: pointer; }
+  .msg .meta { font-size: 9px; color: var(--dimmer); text-align: right; margin-top: 2px; }
+  .me   { align-self: flex-end; background: rgba(251,113,133,.14); border: 1px solid rgba(251,113,133,.3); border-bottom-right-radius: 5px; }
+  .them { align-self: flex-start; background: rgba(34,211,238,.10); border: 1px solid rgba(34,211,238,.25); border-bottom-left-radius: 5px; }
+  .msg.reaction { font-size: 26px; line-height: 1.2; }
+  .msg.hasrx { margin-bottom: 10px; }
+  .rx { position: absolute; bottom: -10px; font-size: 13px; background: var(--panel2); border: 1px solid var(--edge); border-radius: 99px; padding: 0 6px; }
+  .me .rx { left: 8px; } .them .rx { right: 8px; }
+  .rxrow { display: flex; gap: 5px; padding: 2px 0 0; }
+  .rxrow.mine { justify-content: flex-end; } .rxrow.theirs { justify-content: flex-start; }
+  .rxrow button { font-size: 15px; background: var(--panel2); border: 1px solid var(--edge); border-radius: 99px; padding: 3px 8px; }
+  .rxrow button.on { border-color: rgba(34,211,238,.6); background: rgba(34,211,238,.12); }
+  .daydiv { text-align: center; color: var(--dimmer); font-size: 10px; padding: 6px 0 2px; }
+  .quick { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 6px; }
+  .quick button { background: var(--panel2); color: var(--dim); border: 1px solid var(--edge); border-radius: 999px; padding: 5px 10px; font-size: 12px; }
+  .quick button:active { color: var(--rose); border-color: var(--rose); }
+  .composer { display: flex; gap: 8px; }
+  input, button { font: inherit; }
+  input[type=text], input[type=email], input[type=password] {
+    width: 100%; background: var(--panel2); border: 1px solid var(--edge); color: var(--text);
+    border-radius: 12px; padding: 10px 12px; outline: none;
+  }
+  input:focus { border-color: rgba(34,211,238,.5); }
+  .btn { background: rgba(34,211,238,.15); color: var(--arc); border: 1px solid rgba(34,211,238,.4);
+         border-radius: 12px; padding: 10px 16px; font-weight: 600; }
+  .btn:disabled { opacity: .5; }
+  .focusnote { font-size: 12px; color: var(--warn); background: rgba(251,191,36,.08);
+               border: 1px solid rgba(251,191,36,.25); border-radius: 10px; padding: 7px 10px; margin-top: 8px; }
+  .err { color: var(--rose); font-size: 12.5px; margin-top: 8px; }
+  .hide { display: none !important; }
+  .flabel { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; margin: 10px 0 4px; }
+  .ago { font-size: 11px; color: var(--dimmer); margin-left: auto; }
+
+  /* laptop view — the full tracker-mirror layout */
+  @media (min-width: 900px) {
+    body { max-width: 1020px; }
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; align-items: start; }
+    .chat { max-height: 58vh; }
+  }
+
+  /* syllabus mirror */
+  .sylrow { margin-top: 9px; }
+  .sylrow .nm { font-size: 12px; font-weight: 700; }
+  .sylbar { height: 5px; border-radius: 99px; background: var(--edge); overflow: hidden; margin-top: 4px; }
+  .sylbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--arc), var(--ok)); }
+
+  /* consistency heatmap */
+  .heat { display: flex; gap: 3px; overflow-x: auto; padding: 6px 0 2px; }
+  .heat .wk { display: flex; flex-direction: column; gap: 3px; }
+  .heat i { width: 11px; height: 11px; border-radius: 2.5px; background: var(--panel2); display: block; flex: none; }
+  .heat i.h1 { background: rgba(34,211,238,.22); } .heat i.h2 { background: rgba(34,211,238,.42); }
+  .heat i.h3 { background: rgba(34,211,238,.68); } .heat i.h4 { background: var(--arc); }
+</style>
+</head>
+<body>
+
+<!-- visible from the first instant; replaced by login/main once the app boots.
+     If ANYTHING fails to load, the error lands here instead of a blank page. -->
+<div id="boot" style="text-align:center;padding:70px 16px;color:#8b97b5;font-size:14px">💙 Connecting…</div>
+<script>
+  function plFail(msg) {
+    var b = document.getElementById("boot");
+    if (b && b.style.display !== "none") b.innerHTML =
+      "⚠️ Couldn't load — " + msg +
+      "<br><br><button onclick='location.reload()' style='background:#1a2440;color:#22d3ee;border:1px solid #263254;border-radius:10px;padding:8px 16px;font:inherit'>↻ Try again</button>";
+  }
+  window.addEventListener("error", function (e) { plFail(e.message || "script error"); });
+  window.addEventListener("unhandledrejection", function (e) { plFail((e.reason && e.reason.message) || "connection error"); });
+</script>
+
+<div id="login" class="hide">
+  <h1>💙 Partner Link</h1>
+  <div class="mission">GATE 2027 · AIR 1 Mission</div>
+  <p class="sub" style="margin-top:6px">Sign in once — this page remembers you.</p>
+  <div class="card">
+    <div class="flabel">Email</div>
+    <input id="email" type="email" autocomplete="username" />
+    <div class="flabel">Password</div>
+    <input id="password" type="password" autocomplete="current-password" />
+    <div id="loginErr" class="err hide"></div>
+    <button id="loginBtn" class="btn" style="width:100%;margin-top:12px">Sign in</button>
+  </div>
+</div>
+
+<div id="main" class="hide">
+  <div class="row">
+    <div>
+      <h1>Pranav 💙</h1>
+      <div class="mission">GATE 2027 · AIR 1 Mission</div>
+    </div>
+    <span id="ago" class="ago"></span>
+  </div>
+
+  <!-- GATE clock + the climb -->
+  <div class="card">
+    <div class="label" style="margin-bottom:6px">⏳ Runway to GATE</div>
+    <div class="clock">
+      <span id="ckDays" class="days mono">–</span>
+      <span class="dl">days left</span>
+      <span class="hms mono"><span id="ckHM">--:--</span><span class="s" id="ckS">:--</span></span>
+    </div>
+    <div id="climb" class="climb hide">
+      <span class="label">Climb</span>
+      <span id="cbProj" class="proj mono">–</span>
+      <span class="bar"><i id="cbBar" style="width:0%"></i></span>
+      <span id="cbTgt" class="tgt mono">–</span>
+      <span id="cbGap" class="gap"></span>
+    </div>
+    <div id="buffer" class="sub hide" style="margin-top:8px"></div>
+  </div>
+
+  <div class="cols">
+  <div>
+    <!-- live status -->
+    <div class="card">
+      <div class="row">
+        <span id="modeChip" class="chip offline"><span class="pulse"></span><span id="modeTxt">…</span></span>
+        <span id="freeAt" class="sub" style="margin-left:auto"></span>
+      </div>
+      <div id="detail" class="detail hide"></div>
+      <div id="subline" class="sub" style="margin-top:3px"></div>
+    </div>
+
+    <!-- the "don't waste a day" cluster -->
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><b id="stWeek">–</b><span class="label">This week</span><span id="stWeekHint" class="hint"></span></div>
+        <div class="stat"><b id="stStreak">–</b><span class="label">Streak</span><span id="stStreakHint" class="hint"></span></div>
+        <div class="stat"><b id="stLect">–</b><span class="label">Lectures left</span><span class="hint">finite — get through it</span></div>
+        <div class="stat"><b id="stSyll" class="arc2">–</b><span class="label">Syllabus</span><span class="hint">zero blind spots</span></div>
+      </div>
+    </div>
+
+    <!-- today's plan -->
+    <div class="card">
+      <div class="row"><b style="font-size:14px">📅 His day today</b></div>
+      <div id="tlNote" class="sub hide" style="margin-top:6px"></div>
+      <div id="doneList"></div>
+      <div id="timeline" class="tl"><div class="sub">No plan published yet.</div></div>
+    </div>
+  </div>
+
+  <div>
+    <!-- chat -->
+    <div class="card">
+      <div class="row"><b style="font-size:14px">💬 Chat</b> <span class="sub" style="margin-left:auto;font-size:10px">tap a message to react</span></div>
+      <div id="chat" class="chat" style="margin-top:8px">
+        <div class="sub" style="text-align:center;padding:20px 0">No messages yet — say hi 💙</div>
+      </div>
+      <div id="focusNote" class="focusnote hide"></div>
+      <div class="quick">
+        <button data-q="❤️" data-k="reaction">❤️</button>
+        <button data-q="🥰 Proud of you">🥰 Proud of you</button>
+        <button data-q="📞 Call me when you're free">📞 Call me when free</button>
+        <button data-q="🫶 Miss you">🫶 Miss you</button>
+      </div>
+      <div class="composer">
+        <input id="msgIn" type="text" placeholder="Message him…" />
+        <button id="sendBtn" class="btn">➤</button>
+      </div>
+    </div>
+  </div>
+  </div><!-- /cols -->
+
+  <!-- syllabus mirror -->
+  <div class="card">
+    <div class="row"><b style="font-size:14px">📚 Syllabus — subject by subject</b></div>
+    <div id="syl"><div class="sub" style="margin-top:6px">Not synced yet.</div></div>
+  </div>
+
+  <!-- consistency mirror -->
+  <div class="card">
+    <div class="row"><b style="font-size:14px">🔥 Consistency</b><span id="heatTotal" class="sub" style="margin-left:auto"></span></div>
+    <div id="heat" class="heat"><span class="sub">No study logs yet.</span></div>
+    <div class="sub" style="font-size:10px;margin-top:4px">each square = a day · brighter = more hours</div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPA_URL = "https://oncgtzpjuchvexuphjjs.supabase.co";
+const SUPA_KEY = "sb_publishable_nIySrSW7r7MBeIxg6_l9kQ_lsgzgtn_";
+const STALE_MS = 150_000;       // no heartbeat for 2.5 min → treat as offline
+const EXAM_TIME = "T09:30:00";  // GATE morning slot
+const REACTS = ["❤️", "😂", "🥺", "🔥", "👍"];
+
+const supa = createClient(SUPA_URL, SUPA_KEY);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+let uid = null, status = null, msgs = [], rxSel = null;
+
+function fmtClock(mins) {
+  mins = ((Math.round(mins) % 1440) + 1440) % 1440;
+  const h = Math.floor(mins / 60), m = mins % 60, ap = h < 12 ? "AM" : "PM";
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${ap}`;
+}
+const fmtTime = (iso) => new Date(iso).toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+const fmtDay = (iso) => new Date(iso).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+function fmtAgo(iso) {
+  const s = (Date.now() - new Date(iso)) / 1000;
+  return s < 50 ? "live" : s < 3600 ? `${Math.round(s / 60)}m ago` : s < 86400 ? `${Math.round(s / 3600)}h ago` : fmtDay(iso);
+}
+const pad = (n) => String(n).padStart(2, "0");
+const localISO = () => new Date().toLocaleDateString("en-CA");   // YYYY-MM-DD
+
+// ── GATE clock: ticks every second, same math as his tracker's status bar ──
+function tickClock() {
+  const ex = status?.stats?.exam_date;
+  if (!ex) {
+    const dl = status?.stats?.days_to_exam;
+    $("ckDays").textContent = dl ?? "–"; $("ckHM").textContent = "--:--"; $("ckS").textContent = "";
+    return;
+  }
+  let ms = new Date(ex + EXAM_TIME) - new Date();
+  if (ms < 0) ms = 0;
+  $("ckDays").textContent = Math.floor(ms / 86400000);
+  $("ckHM").textContent = `${pad(Math.floor((ms % 86400000) / 3600000))}:${pad(Math.floor((ms % 3600000) / 60000))}`;
+  $("ckS").textContent = ":" + pad(Math.floor((ms % 60000) / 1000));
+}
+setInterval(tickClock, 1000);
+
+const MODES = {
+  studying: { txt: "Studying 📖", cls: "studying" },
+  break:    { txt: "On a break ☕", cls: "break" },
+  personal: { txt: "Personal time 🏃", cls: "personal" },
+  online:   { txt: "Online 🟢", cls: "online" },
+  offline:  { txt: "Offline 🌙", cls: "offline" },
+};
+
+function renderStatus() { try {
+  if (!status) return;
+  const stale = Date.now() - new Date(status.updated_at) > STALE_MS;
+  const mode = stale ? "offline" : (status.mode || "offline");
+  const m = MODES[mode] || MODES.offline;
+  $("modeChip").className = "chip " + m.cls;
+  $("modeTxt").textContent = m.txt;
+  $("ago").textContent = "updated " + fmtAgo(status.updated_at);
+  const det = $("detail");
+  if (mode !== "offline" && status.detail) { det.textContent = (mode === "studying" ? "📺 " : "") + status.detail; det.classList.remove("hide"); }
+  else det.classList.add("hide");
+  $("subline").textContent = (mode === "studying" && status.sub) ? status.sub : "";
+  $("freeAt").textContent = (mode !== "offline" && status.free_at) ? `free ~${status.free_at}` : "";
+
+  // stats — coach framing, same tones as his tracker
+  const st = status.stats || {};
+  tickClock();
+  const wk = st.week_hours ?? null;
+  $("stWeek").textContent = wk != null ? wk + "h" : "–";
+  $("stWeek").className = wk > 0 ? "ok2" : "warn2";
+  $("stWeekHint").textContent = wk > 0 ? "keep the slope" : "break the zero today";
+  const sk = st.streak ?? 0;
+  $("stStreak").textContent = sk > 0 ? sk + " 🔥" : "0";
+  $("stStreak").className = sk > 0 ? "gold2" : "";
+  $("stStreakHint").textContent = sk > 0 ? "don't break it" : "start day 1";
+  $("stLect").textContent = st.lectures_left_h != null ? st.lectures_left_h + "h" : "–";
+  $("stSyll").textContent = st.syllabus_pct != null ? st.syllabus_pct + "%" : "–";
+
+  // the climb — projected ▸ target, +gap in GOLD (approach, not threat)
+  const a = st.air1;
+  if (a && a.target) {
+    $("climb").classList.remove("hide");
+    $("cbProj").textContent = a.proj;
+    $("cbTgt").textContent = a.target;
+    $("cbBar").style.width = Math.max(0, Math.min(100, (a.proj / a.target) * 100)) + "%";
+    $("cbGap").textContent = a.gap > 0 ? `+${a.gap} to summit` : "summit 🏔";
+  } else $("climb").classList.add("hide");
+  if (st.buffer_h != null) {
+    $("buffer").innerHTML = `🛟 <b style="color:var(--gold)">${st.buffer_h}h spare</b> after one full pass of every remaining lecture — the plan holds.`;
+    $("buffer").classList.remove("hide");
+  } else $("buffer").classList.add("hide");
+
+  // syllabus mirror — subject-by-subject, just like his Syllabus page
+  if (st.subjects && st.subjects.length) {
+    $("syl").innerHTML = st.subjects.map((s) => `
+      <div class="sylrow">
+        <div class="row" style="gap:8px">
+          <span class="nm">${esc(s.name || s.code)}</span>
+          <span class="sub" style="font-size:10.5px">${s.done}/${s.total} topics</span>
+          <span class="sub mono" style="margin-left:auto;font-size:11px">${s.pct}% · ${s.left_h}h left</span>
+        </div>
+        <div class="sylbar"><i style="width:${Math.max(0, Math.min(100, s.pct))}%"></i></div>
+      </div>`).join("");
+  }
+
+  // consistency heatmap — his daily hours, GitHub-style
+  renderHeat(st.daily, st.total_hours);
+
+  // today's plan — driven by his ACTUAL execution, never the wall clock.
+  // `live` + `pointer_min` come from his Execute timeline (video-synced):
+  // nothing dims and nothing glows unless he really pressed ▶ and got there.
+  const t = status.today || {};
+  const isToday = t.date === localISO();         // a stale/yesterday plan shows as "no plan yet"
+  const live = mode !== "offline" && !!t.live;
+  const ptr = live && t.pointer_min != null ? t.pointer_min : null;
+  const done = isToday ? (t.done || []) : [];
+  const blocks = isToday && Array.isArray(t.blocks) ? t.blocks : [];
+  const queue = isToday && !blocks.length && Array.isArray(t.queue) ? t.queue : [];
+  $("doneList").innerHTML = done
+    .map((d) => `<div class="done-line">✓ ${esc(d.label)} <span style="color:var(--dimmer)">@ ${fmtClock(d.end)}</span></div>`).join("");
+  if (blocks.length) {
+    $("timeline").innerHTML = blocks.map((b) => {
+      const isNow = ptr != null && b.start <= ptr && ptr < b.end;
+      const cls = ptr != null && b.end <= ptr ? "past" : isNow ? "now" : "";
+      const icon = b.type === "study" ? "📺" : b.type === "commitment" ? "🏃" : b.type === "buffer" ? "🎯" : b.type === "long" ? "🌿" : "☕";
+      return `<div class="blk ${b.type} ${cls}">
+        <span class="t">${fmtClock(b.start)}–${fmtClock(b.end)}${isNow ? ' <span class="nowtag">● NOW</span>' : ""}</span>
+        <span class="l">${icon} ${esc(b.label)}</span></div>`;
+    }).join("");
+  } else if (queue.length) {
+    // plan exists but Execute isn't open yet → show what's queued, no times
+    $("timeline").innerHTML = queue.map((q) =>
+      `<div class="blk study"><span class="t">~${q.mins}m</span><span class="l">📺 ${esc(q.label)}</span></div>`).join("");
+  } else {
+    $("timeline").innerHTML =
+      `<div class="sub">📭 No plan for today yet — he hasn't planned his day.</div>`;
+  }
+
+  // honest header line for the plan card
+  const tn = $("tlNote");
+  if (mode === "offline") tn.classList.add("hide");
+  else if (blocks.length && ptr == null) {
+    tn.textContent = done.length
+      ? `Paused — ${done.length} done so far, the rest is queued.`
+      : `Planned but not started yet — first block is set for ${fmtClock(blocks[0].start)}.`;
+    tn.classList.remove("hide");
+  } else if (blocks.length && live) {
+    tn.textContent = "▶ Executing right now — this is his actual position.";
+    tn.classList.remove("hide");
+  } else if (queue.length) {
+    tn.textContent = `📋 ${queue.length} lecture${queue.length > 1 ? "s" : ""} queued${t.hours ? ` (~${t.hours}h)` : ""} — the live timeline appears when he starts his day.`;
+    tn.classList.remove("hide");
+  } else tn.classList.add("hide");
+
+  // focus note — anchored to his real pointer, not the clock
+  const note = $("focusNote");
+  if (mode === "studying") {
+    const cur = ptr != null ? blocks.find((b) => b.type === "study" && b.start <= ptr && ptr < b.end) : null;
+    note.textContent = cur
+      ? `📚 He's in a focus block till ~${fmtClock(cur.end)} — your message will reach him on his break 💙`
+      : `📚 He's in a focus session — your message will reach him on his break 💙`;
+    note.classList.remove("hide");
+  } else note.classList.add("hide");
+} catch (e) { console.error("renderStatus:", e); } }
+
+// daily = [[YYYY-MM-DD, hours], ...] → week columns, brighter = more hours
+function renderHeat(daily, totalH) {
+  const el = $("heat");
+  if (!daily || !daily.length) return;
+  if (totalH != null) $("heatTotal").textContent = `${totalH}h studied total`;
+  const map = new Map(daily);
+  const end = new Date();
+  const start = new Date(end);
+  start.setDate(end.getDate() - 7 * 26 + 1);
+  start.setDate(start.getDate() - start.getDay());   // align to Sunday
+  const cols = [];
+  let wk = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const iso = d.toLocaleDateString("en-CA");
+    const h = map.get(iso) || 0;
+    const lvl = h <= 0 ? 0 : h < 1 ? 1 : h < 3 ? 2 : h < 5 ? 3 : 4;
+    wk.push(`<i class="${lvl ? "h" + lvl : ""}" title="${iso} · ${h}h"></i>`);
+    if (d.getDay() === 6) { cols.push(`<span class="wk">${wk.join("")}</span>`); wk = []; }
+  }
+  if (wk.length) cols.push(`<span class="wk">${wk.join("")}</span>`);
+  el.innerHTML = cols.join("");
+  el.scrollLeft = el.scrollWidth;   // newest weeks in view
+}
+
+function renderChat() {
+  const box = $("chat");
+  if (!msgs.length) return;
+  let lastDay = "";
+  box.innerHTML = msgs.map((m) => {
+    const mine = m.sender_id === uid;
+    const day = fmtDay(m.created_at);
+    const div = day !== lastDay ? `<div class="daydiv">${day}</div>` : "";
+    lastDay = day;
+    const rxRow = rxSel === m.id
+      ? `<div class="rxrow ${mine ? "mine" : "theirs"}">${REACTS.map((e) =>
+          `<button class="rxbtn ${m.react === e ? "on" : ""}" data-id="${m.id}" data-e="${e}">${e}</button>`).join("")}</div>`
+      : "";
+    return `${div}<div class="msg ${mine ? "me" : "them"} ${m.kind === "reaction" ? "reaction" : ""} ${m.react ? "hasrx" : ""}" data-id="${m.id}">${esc(m.body)}
+      <div class="meta">${fmtTime(m.created_at)}${mine && m.seen_at ? " · seen ✓✓" : ""}</div>
+      ${m.react ? `<span class="rx">${esc(m.react)}</span>` : ""}</div>${rxRow}`;
+  }).join("");
+  if (rxSel == null) box.scrollTop = box.scrollHeight;
+}
+
+// tap a message → react row; tap an emoji → set/clear it (live both sides)
+$("chat").addEventListener("click", async (e) => {
+  const rb = e.target.closest(".rxbtn");
+  if (rb) {
+    const id = Number(rb.dataset.id), emoji = rb.dataset.e;
+    const m = msgs.find((x) => x.id === id);
+    rxSel = null;
+    const val = m && m.react === emoji ? null : emoji;
+    if (m) { m.react = val; renderChat(); }
+    await supa.from("partner_messages").update({ react: val }).eq("id", id);
+    return;
+  }
+  const mg = e.target.closest(".msg");
+  if (mg) { const id = Number(mg.dataset.id); rxSel = rxSel === id ? null : id; renderChat(); }
+});
+
+async function refreshStatus() {
+  const { data } = await supa.from("partner_status").select("*").eq("id", 1).single();
+  if (data) { status = data; renderStatus(); }
+}
+async function refreshMsgs() {
+  const { data } = await supa.from("partner_messages").select("*").order("id", { ascending: false }).limit(300);
+  if (data) { msgs = data.reverse(); renderChat(); }
+}
+async function markSeen() {
+  if (!uid || document.hidden) return;
+  await supa.from("partner_messages").update({ seen_at: new Date().toISOString() })
+    .neq("sender_id", uid).is("seen_at", null);
+}
+
+async function send(body, kind = "text") {
+  body = (body ?? $("msgIn").value).trim();
+  if (!body) return;
+  $("msgIn").value = "";
+  const { data, error } = await supa.from("partner_messages").insert({ body, kind }).select().single();
+  if (error) { $("msgIn").value = body; return; }
+  if (!msgs.some((x) => x.id === data.id)) { msgs.push(data); renderChat(); }
+}
+
+function startLive() {
+  supa.channel("pl-status")
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "partner_status" },
+        (p) => { status = p.new; renderStatus(); })
+    .subscribe();
+  supa.channel("pl-msgs")
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "partner_messages" }, (p) => {
+      if (!msgs.some((x) => x.id === p.new.id)) { msgs.push(p.new); renderChat(); }
+      if (p.new.sender_id !== uid) markSeen();
+    })
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "partner_messages" }, (p) => {
+      msgs = msgs.map((x) => (x.id === p.new.id ? p.new : x)); renderChat();
+    })
+    .subscribe();
+  setInterval(refreshStatus, 30_000);
+  setInterval(renderStatus, 10_000);   // keeps "ago", dimming, NOW tag & focus-note fresh
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { refreshStatus(); refreshMsgs(); markSeen(); } });
+}
+
+async function main(session) {
+  uid = session.user.id;
+  $("boot").style.display = "none";
+  $("login").classList.add("hide");
+  $("main").classList.remove("hide");
+  await Promise.all([refreshStatus(), refreshMsgs()]);
+  markSeen();
+  startLive();
+}
+
+$("loginBtn").addEventListener("click", async () => {
+  $("loginErr").classList.add("hide");
+  $("loginBtn").disabled = true;
+  const { data, error } = await supa.auth.signInWithPassword({
+    email: $("email").value.trim(), password: $("password").value,
+  });
+  $("loginBtn").disabled = false;
+  if (error) { $("loginErr").textContent = error.message; $("loginErr").classList.remove("hide"); return; }
+  main(data.session);
+});
+$("password").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
+$("sendBtn").addEventListener("click", () => send());
+$("msgIn").addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+document.querySelectorAll(".quick button").forEach((b) =>
+  b.addEventListener("click", () => send(b.dataset.q, b.dataset.k || "text")));
+
+let _sess = null;
+try { _sess = (await supa.auth.getSession()).data.session; } catch {}
+if (_sess) main(_sess);
+else { $("boot").style.display = "none"; $("login").classList.remove("hide"); }
+</script>
+</body>
+</html>
