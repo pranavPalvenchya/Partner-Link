@@ -71,6 +71,7 @@
   .blk .l { flex: 1; min-width: 0; word-break: break-word; }
   .blk.study .l { color: #cdd7ee; } .blk.study .t { color: var(--arc); opacity: .8; }
   .blk.break .l, .blk.long .l { color: var(--ok); } .blk.commitment .l { color: var(--warn); } .blk.buffer .l { color: var(--violet); }
+  .blk.gap .l { color: var(--dimmer); font-style: italic; }
   .nowtag { color: var(--arc); font-size: 9px; font-weight: 800; animation: pulse 1.6s infinite; }
   .done-line { font-size: 12px; color: var(--ok); opacity: .85; padding: 2px 0; }
 
@@ -394,7 +395,7 @@ function renderStatus() { try {
     $("timeline").innerHTML = blocks.map((b) => {
       const isNow = ptr != null && b.start <= ptr && ptr < b.end;
       const cls = ptr != null && b.end <= ptr ? "past" : isNow ? "now" : "";
-      const icon = b.type === "study" ? "📺" : b.type === "commitment" ? "🏃" : b.type === "buffer" ? "🎯" : b.type === "long" ? "🌿" : "☕";
+      const icon = b.type === "study" ? "📺" : b.type === "commitment" ? "🏃" : b.type === "buffer" ? "🎯" : b.type === "gap" ? "🕓" : b.type === "long" ? "🌿" : "☕";
       return `<div class="blk ${b.type} ${cls}">
         <span class="t">${fmtClock(b.start)}–${fmtClock(b.end)}${isNow ? ' <span class="nowtag">● NOW</span>' : ""}</span>
         <span class="l">${icon} ${esc(b.label)}</span></div>`;
