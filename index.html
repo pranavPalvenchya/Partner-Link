@@ -83,10 +83,19 @@
   .msg.hasrx { margin-bottom: 10px; }
   .rx { position: absolute; bottom: -10px; font-size: 13px; background: var(--panel2); border: 1px solid var(--edge); border-radius: 99px; padding: 0 6px; }
   .me .rx { left: 8px; } .them .rx { right: 8px; }
-  .rxrow { display: flex; gap: 5px; padding: 2px 0 0; }
+  .rxrow { display: flex; gap: 5px; padding: 2px 0 0; flex-wrap: wrap; }
   .rxrow.mine { justify-content: flex-end; } .rxrow.theirs { justify-content: flex-start; }
   .rxrow button { font-size: 15px; background: var(--panel2); border: 1px solid var(--edge); border-radius: 99px; padding: 3px 8px; }
   .rxrow button.on { border-color: rgba(34,211,238,.6); background: rgba(34,211,238,.12); }
+  .rxrow button.rpbtn { font-size: 12px; color: var(--arc); }
+  .quote { font-size: 11.5px; color: var(--dim); border-left: 2px solid var(--arc);
+           background: rgba(255,255,255,.05); border-radius: 6px; padding: 3px 7px; margin-bottom: 4px;
+           overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px; }
+  .replybar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dim);
+              background: var(--panel2); border-left: 2px solid var(--arc); border-radius: 8px;
+              padding: 6px 10px; margin-top: 8px; }
+  .replybar span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .replybar button { background: none; border: none; color: var(--dimmer); font-size: 14px; }
   .daydiv { text-align: center; color: var(--dimmer); font-size: 10px; padding: 6px 0 2px; }
   .quick { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 6px; }
   .quick button { background: var(--panel2); color: var(--dim); border: 1px solid var(--edge); border-radius: 999px; padding: 5px 10px; font-size: 12px; }
@@ -225,6 +234,10 @@
         <div class="sub" style="text-align:center;padding:20px 0">No messages yet — say hi 💙</div>
       </div>
       <div id="focusNote" class="focusnote hide"></div>
+      <div id="replyBar" class="replybar hide">
+        <span id="replyTxt"></span>
+        <button id="replyCancel" title="cancel reply">✕</button>
+      </div>
       <div class="quick">
         <button data-q="❤️" data-k="reaction">❤️</button>
         <button data-q="🥰 Proud of you">🥰 Proud of you</button>
@@ -267,7 +280,7 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-let uid = null, status = null, msgs = [], rxSel = null;
+let uid = null, status = null, msgs = [], rxSel = null, replyTo = null;
 
 function fmtClock(mins) {
   mins = ((Math.round(mins) % 1440) + 1440) % 1440;
@@ -449,25 +462,49 @@ function renderHeat(daily, totalH) {
 function renderChat() {
   const box = $("chat");
   if (!msgs.length) return;
+  // keep her place: only auto-scroll when she was already near the bottom —
+  // a tap mid-history must never yank the list (the phone reaction bug)
+  const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  const prevTop = box.scrollTop;
   let lastDay = "";
   box.innerHTML = msgs.map((m) => {
     const mine = m.sender_id === uid;
     const day = fmtDay(m.created_at);
     const div = day !== lastDay ? `<div class="daydiv">${day}</div>` : "";
     lastDay = day;
+    const orig = m.reply_to ? msgs.find((x) => x.id === m.reply_to) : null;
+    const quote = m.reply_to
+      ? `<div class="quote">↩ ${esc((orig ? orig.body : "earlier message").slice(0, 90))}</div>` : "";
     const rxRow = rxSel === m.id
       ? `<div class="rxrow ${mine ? "mine" : "theirs"}">${REACTS.map((e) =>
-          `<button class="rxbtn ${m.react === e ? "on" : ""}" data-id="${m.id}" data-e="${e}">${e}</button>`).join("")}</div>`
+          `<button class="rxbtn ${m.react === e ? "on" : ""}" data-id="${m.id}" data-e="${e}">${e}</button>`).join("")}
+          <button class="rpbtn" data-id="${m.id}">↩ Reply</button></div>`
       : "";
-    return `${div}<div class="msg ${mine ? "me" : "them"} ${m.kind === "reaction" ? "reaction" : ""} ${m.react ? "hasrx" : ""}" data-id="${m.id}">${esc(m.body)}
+    return `${div}<div class="msg ${mine ? "me" : "them"} ${m.kind === "reaction" ? "reaction" : ""} ${m.react ? "hasrx" : ""}" data-id="${m.id}">${quote}${esc(m.body)}
       <div class="meta">${fmtTime(m.created_at)}${mine && m.seen_at ? " · seen ✓✓" : ""}</div>
       ${m.react ? `<span class="rx">${esc(m.react)}</span>` : ""}</div>${rxRow}`;
   }).join("");
-  if (rxSel == null) box.scrollTop = box.scrollHeight;
+  if (rxSel == null && nearBottom) box.scrollTop = box.scrollHeight;
+  else box.scrollTop = prevTop;
 }
 
-// tap a message → react row; tap an emoji → set/clear it (live both sides)
+function setReply(m) {
+  replyTo = m;
+  $("replyTxt").textContent = "↩ " + (m ? m.body.slice(0, 80) : "");
+  $("replyBar").classList.toggle("hide", !m);
+  if (m) $("msgIn").focus();
+}
+$("replyCancel").addEventListener("click", () => setReply(null));
+
+// tap a message → react row (+ Reply); tap an emoji → set/clear it (live both sides)
 $("chat").addEventListener("click", async (e) => {
+  const rp = e.target.closest(".rpbtn");
+  if (rp) {
+    const m = msgs.find((x) => x.id === Number(rp.dataset.id));
+    rxSel = null; renderChat();
+    if (m) setReply(m);
+    return;
+  }
   const rb = e.target.closest(".rxbtn");
   if (rb) {
     const id = Number(rb.dataset.id), emoji = rb.dataset.e;
@@ -500,8 +537,11 @@ async function send(body, kind = "text") {
   body = (body ?? $("msgIn").value).trim();
   if (!body) return;
   $("msgIn").value = "";
-  const { data, error } = await supa.from("partner_messages").insert({ body, kind }).select().single();
+  const row = { body, kind };
+  if (replyTo) row.reply_to = replyTo.id;
+  const { data, error } = await supa.from("partner_messages").insert(row).select().single();
   if (error) { $("msgIn").value = body; return; }
+  setReply(null);
   if (!msgs.some((x) => x.id === data.id)) { msgs.push(data); renderChat(); }
 }
 
